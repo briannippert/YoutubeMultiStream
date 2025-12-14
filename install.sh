@@ -29,7 +29,7 @@ fi
 
 # Check if Node.js is installed - check multiple paths
 NODE_PATH=""
-for path in /usr/bin/node /usr/local/bin/node ~/.nvm/versions/node/*/bin/node $(which node 2>/dev/null); do
+for path in /usr/bin/node /usr/local/bin/node /root/.nvm/versions/node/*/bin/node $(which node 2>/dev/null); do
     if [ -x "$path" ]; then
         NODE_PATH="$path"
         break
@@ -46,10 +46,20 @@ fi
 echo -e "${GREEN}Node.js found at: $NODE_PATH${NC}"
 echo -e "${GREEN}Node.js version: $($NODE_PATH --version)${NC}"
 
+# Get npm path from the same directory as node
+NPM_PATH="$(dirname "$NODE_PATH")/npm"
+if [ ! -x "$NPM_PATH" ]; then
+    echo -e "${RED}Error: npm not found in $(dirname "$NODE_PATH")${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}npm found at: $NPM_PATH${NC}"
+echo -e "${GREEN}npm version: $($NPM_PATH --version)${NC}"
+
 # Install npm dependencies
 echo -e "${YELLOW}Installing npm dependencies...${NC}"
 cd "$APP_DIR" || exit 1
-if npm install; then
+if $NPM_PATH install; then
     echo -e "${GREEN}Dependencies installed${NC}"
 else
     echo -e "${RED}Error: Failed to install dependencies${NC}"
