@@ -37,7 +37,7 @@ function createStreamBox(stream) {
     if (stream.url) {
         const videoId = extractYouTubeVideoId(stream.url);
         if (videoId) {
-            embedCode = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&fs=1&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            embedCode = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&fs=1&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
         } else {
             embedCode = '<div class="stream-loading">Invalid YouTube URL. Please use format: https://www.youtube.com/watch?v=VIDEO_ID</div>';
         }
