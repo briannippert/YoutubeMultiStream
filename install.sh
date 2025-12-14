@@ -27,16 +27,24 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Check if Node.js is installed
-if ! command -v node &> /dev/null; then
+# Check if Node.js is installed - check multiple paths
+NODE_PATH=""
+for path in /usr/bin/node /usr/local/bin/node ~/.nvm/versions/node/*/bin/node $(which node 2>/dev/null); do
+    if [ -x "$path" ]; then
+        NODE_PATH="$path"
+        break
+    fi
+done
+
+if [ -z "$NODE_PATH" ]; then
     echo -e "${RED}Error: Node.js is not installed${NC}"
     echo "Please install Node.js 16+ before running this script"
     echo "Visit: https://nodejs.org/ or use your package manager"
     exit 1
 fi
 
-echo -e "${GREEN}Node.js: $(node --version)${NC}"
-echo -e "${GREEN}npm: $(npm --version)${NC}"
+echo -e "${GREEN}Node.js found at: $NODE_PATH${NC}"
+echo -e "${GREEN}Node.js version: $($NODE_PATH --version)${NC}"
 
 # Install npm dependencies
 echo -e "${YELLOW}Installing npm dependencies...${NC}"
@@ -61,7 +69,7 @@ User=$SUDO_USER
 WorkingDirectory=$APP_DIR
 Environment="NODE_ENV=production"
 Environment="PORT=$PORT"
-ExecStart=/usr/bin/node $APP_DIR/server.js
+ExecStart=$NODE_PATH $APP_DIR/server.js
 Restart=always
 RestartSec=10
 StandardOutput=journal
