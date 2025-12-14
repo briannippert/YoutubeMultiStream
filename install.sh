@@ -29,12 +29,12 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Install Node.js if not present
+# Check if Node.js is installed
 if ! command -v node &> /dev/null; then
-    echo -e "${YELLOW}Installing Node.js...${NC}"
-    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-    apt-get install -y nodejs
-    echo -e "${GREEN}Node.js installed${NC}"
+    echo -e "${RED}Error: Node.js is not installed${NC}"
+    echo "Please install Node.js 16+ before running this script"
+    echo "Visit: https://nodejs.org/ or use your package manager"
+    exit 1
 else
     echo -e "${GREEN}Node.js already installed: $(node --version)${NC}"
 fi
