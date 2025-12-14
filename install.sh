@@ -71,9 +71,27 @@ else
     exit 1
 fi
 
+# Create a wrapper script to handle nvm if needed
+WRAPPER_SCRIPT="/usr/local/bin/youtube-multistream-start"
+echo -e "${YELLOW}Creating wrapper script...${NC}"
+cat > "$WRAPPER_SCRIPT" << WRAPPER_EOF
+#!/bin/bash
+# Wrapper script to start YouTube Multi-Stream server
+
+# Source nvm if it exists
+if [ -f "/home/$SUDO_USER/.nvm/nvm.sh" ]; then
+    source "/home/$SUDO_USER/.nvm/nvm.sh"
+fi
+
+# Start the server
+cd "$APP_DIR" || exit 1
+exec node server.js
+WRAPPER_EOF
+
+chmod +x "$WRAPPER_SCRIPT"
+
 # Create systemd service file
 echo -e "${YELLOW}Creating systemd service...${NC}"
-NODE_BIN_DIR="$(dirname "$NODE_PATH")"
 cat > /etc/systemd/system/${SERVICE_NAME}.service << EOF
 [Unit]
 Description=YouTube Multi-Stream Service
@@ -85,8 +103,8 @@ User=$SUDO_USER
 WorkingDirectory=$APP_DIR
 Environment="NODE_ENV=production"
 Environment="PORT=$PORT"
-Environment="PATH=$NODE_BIN_DIR:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ExecStart=$NODE_PATH $APP_DIR/server.js
+Environment="HOME=/home/$SUDO_USER"
+ExecStart=$WRAPPER_SCRIPT
 Restart=always
 RestartSec=10
 StandardOutput=journal
