@@ -3,6 +3,9 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Log startup info
+console.log(`Starting YouTube Multi-Stream server on port ${PORT}...`);
+
 // Serve static files
 app.use(express.static(path.join(__dirname)));
 

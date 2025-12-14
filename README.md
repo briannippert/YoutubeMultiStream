@@ -52,7 +52,7 @@ Use `youtubeVideoId` for specific videos/streams, or `youtubeChannelId` to embed
 ### Quick Start (Static Files)
 Simply open `index.html` in your browser. The interface will load streams from `data/streams.json`.
 
-### With Express Server
+### With Express Server (Local Development)
 1. Install dependencies:
    ```bash
    npm install
@@ -64,6 +64,44 @@ Simply open `index.html` in your browser. The interface will load streams from `
    ```
 
 3. Open http://localhost:3000 in your browser
+
+### Ubuntu Server Setup with systemd Service
+
+Install as a systemd service that runs on startup:
+
+```bash
+# Clone the repository
+git clone https://github.com/briannippert/YoutubeMultiStream.git
+cd YoutubeMultiStream
+
+# Run install script with optional port (default: 3000)
+sudo bash install.sh [PORT]
+
+# Examples:
+sudo bash install.sh 3000    # Use port 3000
+sudo bash install.sh 8080    # Use port 8080
+sudo bash install.sh         # Use default port 3000
+```
+
+The install script will:
+- Install Node.js and npm (if not present)
+- Install project dependencies
+- Create a systemd service
+- Enable the service to start on boot
+- Start the service immediately
+
+**View logs:**
+```bash
+journalctl -u youtube-multistream -f
+```
+
+**Manage service:**
+```bash
+sudo systemctl start youtube-multistream
+sudo systemctl stop youtube-multistream
+sudo systemctl restart youtube-multistream
+sudo systemctl status youtube-multistream
+```
 
 ## How It Works
 
