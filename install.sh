@@ -2,8 +2,6 @@
 
 # YouTube Multi-Stream Install Script for Ubuntu
 
-set -e
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -14,18 +12,18 @@ NC='\033[0m' # No Color
 PORT=${1:-3000}
 SERVICE_NAME="youtube-multistream"
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-USER=$(whoami)
+SUDO_USER=${SUDO_USER:-$(whoami)}
 
 echo -e "${YELLOW}YouTube Multi-Stream Service Installer${NC}"
 echo "========================================"
 echo "Port: $PORT"
 echo "App Directory: $APP_DIR"
-echo "User: $USER"
+echo "Running as User: $SUDO_USER"
 echo ""
 
 # Check if running as root (required for systemd service)
 if [ "$EUID" -ne 0 ]; then 
-    echo -e "${RED}Please run as root (use sudo)${NC}"
+    echo -e "${RED}Error: Please run as root (use sudo)${NC}"
     exit 1
 fi
 
@@ -35,15 +33,20 @@ if ! command -v node &> /dev/null; then
     echo "Please install Node.js 16+ before running this script"
     echo "Visit: https://nodejs.org/ or use your package manager"
     exit 1
-else
-    echo -e "${GREEN}Node.js already installed: $(node --version)${NC}"
 fi
+
+echo -e "${GREEN}Node.js: $(node --version)${NC}"
+echo -e "${GREEN}npm: $(npm --version)${NC}"
 
 # Install npm dependencies
 echo -e "${YELLOW}Installing npm dependencies...${NC}"
-cd "$APP_DIR"
-npm install
-echo -e "${GREEN}Dependencies installed${NC}"
+cd "$APP_DIR" || exit 1
+if npm install; then
+    echo -e "${GREEN}Dependencies installed${NC}"
+else
+    echo -e "${RED}Error: Failed to install dependencies${NC}"
+    exit 1
+fi
 
 # Create systemd service file
 echo -e "${YELLOW}Creating systemd service...${NC}"
@@ -54,7 +57,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
+User=$SUDO_USER
 WorkingDirectory=$APP_DIR
 Environment="NODE_ENV=production"
 Environment="PORT=$PORT"
@@ -68,22 +71,40 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-echo -e "${GREEN}Service file created${NC}"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}Service file created${NC}"
+else
+    echo -e "${RED}Error: Failed to create service file${NC}"
+    exit 1
+fi
 
 # Reload systemd daemon
 echo -e "${YELLOW}Reloading systemd daemon...${NC}"
-systemctl daemon-reload
-echo -e "${GREEN}Daemon reloaded${NC}"
+if systemctl daemon-reload; then
+    echo -e "${GREEN}Daemon reloaded${NC}"
+else
+    echo -e "${RED}Error: Failed to reload daemon${NC}"
+    exit 1
+fi
 
 # Enable the service
 echo -e "${YELLOW}Enabling service to start on boot...${NC}"
-systemctl enable ${SERVICE_NAME}.service
-echo -e "${GREEN}Service enabled${NC}"
+if systemctl enable ${SERVICE_NAME}.service; then
+    echo -e "${GREEN}Service enabled${NC}"
+else
+    echo -e "${RED}Error: Failed to enable service${NC}"
+    exit 1
+fi
 
 # Start the service
 echo -e "${YELLOW}Starting service...${NC}"
-systemctl start ${SERVICE_NAME}.service
-echo -e "${GREEN}Service started${NC}"
+if systemctl start ${SERVICE_NAME}.service; then
+    echo -e "${GREEN}Service started${NC}"
+else
+    echo -e "${RED}Error: Failed to start service${NC}"
+    echo "Check logs with: journalctl -u $SERVICE_NAME -n 50"
+    exit 1
+fi
 
 # Check status
 echo ""
