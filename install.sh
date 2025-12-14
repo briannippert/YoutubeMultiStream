@@ -59,7 +59,12 @@ echo -e "${GREEN}npm version: $($NPM_PATH --version)${NC}"
 # Install npm dependencies
 echo -e "${YELLOW}Installing npm dependencies...${NC}"
 cd "$APP_DIR" || exit 1
-if $NPM_PATH install; then
+
+# Get the bin directory containing node and npm
+NODE_BIN_DIR="$(dirname "$NODE_PATH")"
+
+# Run npm with the correct PATH
+if PATH="$NODE_BIN_DIR:$PATH" $NPM_PATH install; then
     echo -e "${GREEN}Dependencies installed${NC}"
 else
     echo -e "${RED}Error: Failed to install dependencies${NC}"
@@ -68,6 +73,7 @@ fi
 
 # Create systemd service file
 echo -e "${YELLOW}Creating systemd service...${NC}"
+NODE_BIN_DIR="$(dirname "$NODE_PATH")"
 cat > /etc/systemd/system/${SERVICE_NAME}.service << EOF
 [Unit]
 Description=YouTube Multi-Stream Service
@@ -79,6 +85,7 @@ User=$SUDO_USER
 WorkingDirectory=$APP_DIR
 Environment="NODE_ENV=production"
 Environment="PORT=$PORT"
+Environment="PATH=$NODE_BIN_DIR:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=$NODE_PATH $APP_DIR/server.js
 Restart=always
 RestartSec=10
