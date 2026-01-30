@@ -96,4 +96,4 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', loadStreams);
 
 // Optional: Refresh streams every 5 minutes
-setInterval(loadStreams, 5 * 60 * 1000);
+// setInterval(loadStreams, 5 * 60 * 1000);
