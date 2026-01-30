@@ -73,7 +73,9 @@ Install as a systemd service that runs on startup:
 # Clone the repository
 git clone https://github.com/briannippert/YoutubeMultiStream.git
 cd YoutubeMultiStream
-
+sudo bash install.sh
+```
+```
 # Run install script with optional port (default: 3000)
 sudo bash install.sh [PORT]
 
