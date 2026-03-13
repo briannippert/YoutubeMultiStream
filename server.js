@@ -1,5 +1,8 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+const updateStreams = require('./utils/streamFetcher');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -16,9 +19,25 @@ app.get('/', (req, res) => {
 
 // API endpoint to get streams
 app.get('/api/streams', (req, res) => {
-    const streams = require('./data/streams.json');
-    res.json(streams);
+    const streamsPath = path.join(__dirname, 'data', 'streams.json');
+    fs.readFile(streamsPath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading streams.json:', err);
+            return res.status(500).json({ error: 'Failed to read streams' });
+        }
+        try {
+            const streams = JSON.parse(data);
+            res.json(streams);
+        } catch (parseError) {
+            console.error('Error parsing streams.json:', parseError);
+            res.status(500).json({ error: 'Failed to parse streams data' });
+        }
+    });
 });
+
+// Initial fetch and scheduled updates
+updateStreams();
+setInterval(updateStreams, 60 * 60 * 1000); // Update every hour
 
 // Start server
 app.listen(PORT, () => {
