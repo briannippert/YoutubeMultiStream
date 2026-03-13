@@ -30,19 +30,31 @@ async function updateStreams() {
 
         console.log(`Found ${liveStreams.length} live streams after filtering.`);
 
-        const streamsData = liveStreams.map((v, index) => ({
+        // New Salem streams from auto-fetching
+        const fetchedStreams = liveStreams.map((v) => ({
             id: v.id,
             title: v.title,
-            url: `https://www.youtube.com/watch?v=${v.id}`
+            url: `https://www.youtube.com/watch?v=${v.id}`,
+            autoUpdated: true
         }));
 
-        if (streamsData.length > 0) {
-             console.log(`Updating streams.json with ${streamsData.length} streams.`);
-             fs.writeFileSync(STREAMS_FILE, JSON.stringify(streamsData, null, 2));
-        } else {
-            console.log('No live streams found. Updating with empty list.');
-            fs.writeFileSync(STREAMS_FILE, JSON.stringify([], null, 2));
+        // Load existing streams to preserve manually added ones
+        let manualStreams = [];
+        if (fs.existsSync(STREAMS_FILE)) {
+            try {
+                const existingContent = fs.readFileSync(STREAMS_FILE, 'utf8');
+                const existingData = JSON.parse(existingContent);
+                // Keep streams that are explicitly marked as not autoUpdated
+                manualStreams = existingData.filter(s => s.autoUpdated === false);
+            } catch (e) {
+                console.error('Error reading existing streams file, starting fresh with manual streams:', e);
+            }
         }
+
+        const combinedStreams = [...manualStreams, ...fetchedStreams];
+
+        console.log(`Updating streams.json with ${fetchedStreams.length} auto-updated and ${manualStreams.length} manual streams.`);
+        fs.writeFileSync(STREAMS_FILE, JSON.stringify(combinedStreams, null, 2));
 
     } catch (error) {
         console.error('Error fetching streams:', error);
