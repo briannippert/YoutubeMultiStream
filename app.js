@@ -13,6 +13,12 @@ async function loadStreams() {
     }
 }
 
+function getGridDimensions(count) {
+    const cols = Math.ceil(Math.sqrt(count));
+    const rows = Math.ceil(count / cols);
+    return { cols, rows };
+}
+
 function renderStreams(streams) {
     const grid = document.getElementById('streams-grid');
     grid.innerHTML = '';
@@ -22,10 +28,21 @@ function renderStreams(streams) {
         return;
     }
 
-    streams.forEach(stream => {
+    const { cols, rows } = getGridDimensions(streams.length);
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+    const boxes = streams.map(stream => {
         const streamBox = createStreamBox(stream);
         grid.appendChild(streamBox);
+        return streamBox;
     });
+
+    // If the last row has only one stream, span it across all columns
+    const lastRowCount = streams.length % cols;
+    if (lastRowCount === 1) {
+        boxes[boxes.length - 1].style.gridColumn = '1 / -1';
+    }
 }
 
 function createStreamBox(stream) {
