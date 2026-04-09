@@ -112,5 +112,5 @@ function escapeHtml(text) {
 // Load streams when page loads
 document.addEventListener('DOMContentLoaded', loadStreams);
 
-// Optional: Refresh streams every 5 minutes
-// setInterval(loadStreams, 5 * 60 * 1000);
+// Refresh streams every 5 minutes to pick up streams that go live or offline
+setInterval(loadStreams, 5 * 60 * 1000);

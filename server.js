@@ -37,7 +37,7 @@ app.get('/api/streams', (req, res) => {
 
 // Initial fetch and scheduled updates
 updateStreams();
-setInterval(updateStreams, 60 * 60 * 1000); // Update every hour
+setInterval(updateStreams, 5 * 60 * 1000); // Update every 5 minutes
 
 // Start server
 app.listen(PORT, () => {
