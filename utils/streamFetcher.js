@@ -29,6 +29,13 @@ async function fetchStreamsForChannel(handle) {
         const video = item?.richItemRenderer?.content?.videoRenderer;
         if (!video?.videoId) continue;
 
+        // Only include currently live streams (style === 'LIVE' in thumbnail overlay)
+        const overlays = video?.thumbnailOverlays ?? [];
+        const isLive = overlays.some(o =>
+            o?.thumbnailOverlayTimeStatusRenderer?.style === 'LIVE'
+        );
+        if (!isLive) continue;
+
         const title = video?.title?.runs?.[0]?.text ?? '';
         const isExcluded = EXCLUDED_TITLES.some(t =>
             title.toLowerCase().includes(t.toLowerCase())
