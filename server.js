@@ -27,7 +27,7 @@ app.get('/api/streams', (req, res) => {
         }
         try {
             const streams = JSON.parse(data);
-            res.json(streams);
+            res.set('Cache-Control', 'no-store').json(streams);
         } catch (parseError) {
             console.error('Error parsing streams.json:', parseError);
             res.status(500).json({ error: 'Failed to parse streams data' });
