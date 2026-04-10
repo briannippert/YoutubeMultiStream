@@ -27,6 +27,7 @@ app.get('/api/streams', (req, res) => {
         }
         try {
             const streams = JSON.parse(data);
+            console.log(`Serving ${streams.length} streams to client at ${new Date().toLocaleTimeString()}`);
             res.set('Cache-Control', 'no-store').json(streams);
         } catch (parseError) {
             console.error('Error parsing streams.json:', parseError);

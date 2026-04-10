@@ -56,11 +56,21 @@ async function fetchStreamsForChannel(handle) {
 
 async function updateStreams() {
     try {
-        const results = await Promise.all(CHANNEL_HANDLES.map(fetchStreamsForChannel));
+        const results = await Promise.allSettled(CHANNEL_HANDLES.map(fetchStreamsForChannel));
+        
+        let fetchedStreams = [];
+        for (let i = 0; i < results.length; i++) {
+            const result = results[i];
+            if (result.status === 'fulfilled') {
+                fetchedStreams = fetchedStreams.concat(result.value);
+            } else {
+                console.error(`Failed to fetch ${CHANNEL_HANDLES[i]}:`, result.reason);
+            }
+        }
 
         // Deduplicate by video ID across channels
         const seen = new Set();
-        const fetchedStreams = results.flat().filter(s => {
+        fetchedStreams = fetchedStreams.filter(s => {
             if (seen.has(s.id)) return false;
             seen.add(s.id);
             return true;

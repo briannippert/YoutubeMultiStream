@@ -1,11 +1,13 @@
 // Load streams from JSON file and render them
 async function loadStreams() {
     try {
+        console.log('Loading streams at', new Date().toLocaleTimeString());
         const response = await fetch('/api/streams?t=' + Date.now());
         if (!response.ok) {
             throw new Error('Failed to load streams');
         }
         const streams = await response.json();
+        console.log('Loaded', streams.length, 'streams');
         renderStreams(streams);
     } catch (error) {
         console.error('Error loading streams:', error);
