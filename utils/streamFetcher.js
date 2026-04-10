@@ -11,47 +11,60 @@ const EXCLUDED_TITLES = ['Dump camera', 'Transfer Station Camera'];
 async function fetchStreamsForChannel(handle) {
     console.log(`Fetching live streams for channel: ${handle}`);
     const url = `https://www.youtube.com/${handle}/streams`;
-    const res = await fetch(url, {
-        headers: { 'Accept-Language': 'en-US,en;q=0.9' }
-    });
-    const html = await res.text();
+    
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const res = await fetch(url, {
+                headers: { 'Accept-Language': 'en-US,en;q=0.9' }
+            });
+            const html = await res.text();
 
-    const match = html.match(/var ytInitialData = ({.*?});<\/script>/s);
-    if (!match) throw new Error(`Could not find ytInitialData for ${handle}`);
+            const match = html.match(/var ytInitialData = ({.*?});<\/script>/s);
+            if (!match) throw new Error(`Could not find ytInitialData for ${handle}`);
 
-    const data = JSON.parse(match[1]);
-    const tabs = data?.contents?.twoColumnBrowseResultsRenderer?.tabs ?? [];
-    const liveTab = tabs.find(t => t?.tabRenderer?.title === 'Live');
-    const items = liveTab?.tabRenderer?.content?.richGridRenderer?.contents ?? [];
+            const data = JSON.parse(match[1]);
+            const tabs = data?.contents?.twoColumnBrowseResultsRenderer?.tabs ?? [];
+            const liveTab = tabs.find(t => t?.tabRenderer?.title === 'Live');
+            const items = liveTab?.tabRenderer?.content?.richGridRenderer?.contents ?? [];
 
-    const streams = [];
-    for (const item of items) {
-        const video = item?.richItemRenderer?.content?.videoRenderer;
-        if (!video?.videoId) continue;
+            const streams = [];
+            for (const item of items) {
+                const video = item?.richItemRenderer?.content?.videoRenderer;
+                if (!video?.videoId) continue;
 
-        // Only include currently live streams (style === 'LIVE' in thumbnail overlay)
-        const overlays = video?.thumbnailOverlays ?? [];
-        const isLive = overlays.some(o =>
-            o?.thumbnailOverlayTimeStatusRenderer?.style === 'LIVE'
-        );
-        if (!isLive) continue;
+                // Only include currently live streams (style === 'LIVE' in thumbnail overlay)
+                const overlays = video?.thumbnailOverlays ?? [];
+                const isLive = overlays.some(o =>
+                    o?.thumbnailOverlayTimeStatusRenderer?.style === 'LIVE'
+                );
+                if (!isLive) continue;
 
-        const title = video?.title?.runs?.[0]?.text ?? '';
-        const isExcluded = EXCLUDED_TITLES.some(t =>
-            title.toLowerCase().includes(t.toLowerCase())
-        );
-        if (isExcluded) continue;
+                const title = video?.title?.runs?.[0]?.text ?? '';
+                const isExcluded = EXCLUDED_TITLES.some(t =>
+                    title.toLowerCase().includes(t.toLowerCase())
+                );
+                if (isExcluded) continue;
 
-        streams.push({
-            id: video.videoId,
-            title,
-            url: `https://www.youtube.com/watch?v=${video.videoId}`,
-            autoUpdated: true
-        });
+                streams.push({
+                    id: video.videoId,
+                    title,
+                    url: `https://www.youtube.com/watch?v=${video.videoId}`,
+                    autoUpdated: true
+                });
+            }
+
+            console.log(`Found ${streams.length} live streams for ${handle}.`);
+            return streams;
+            
+        } catch (error) {
+            console.error(`Attempt ${attempt} failed for ${handle}:`, error.message);
+            if (attempt === 3) {
+                console.error(`All attempts failed for ${handle}`);
+                return [];
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
     }
-
-    console.log(`Found ${streams.length} live streams for ${handle}.`);
-    return streams;
 }
 
 async function updateStreams() {
