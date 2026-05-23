@@ -42,26 +42,50 @@ async function fetchStreamsForChannel(handle) {
 
             const streams = [];
             for (const item of items) {
-                const video = item?.richItemRenderer?.content?.videoRenderer;
-                if (!video?.videoId) continue;
+                let videoId = null;
+                let title = null;
+                let isLive = false;
 
-                // Only include currently live streams (style === 'LIVE' in thumbnail overlay)
-                const overlays = video?.thumbnailOverlays ?? [];
-                const isLive = overlays.some(o =>
-                    o?.thumbnailOverlayTimeStatusRenderer?.style === 'LIVE'
-                );
-                if (!isLive) continue;
+                // YouTube changed from videoRenderer to lockupViewModel
+                const lockup = item?.richItemRenderer?.content?.lockupViewModel;
+                if (lockup) {
+                    // Extract video ID from thumbnail URL
+                    const thumbUrl = lockup?.contentImage?.thumbnailViewModel?.image?.sources?.[0]?.url;
+                    const idMatch = thumbUrl?.match(/\/vi\/([^\/]+)\//);
+                    videoId = idMatch?.[1];
+                    
+                    // Extract title from metadata
+                    title = lockup?.metadata?.lockupMetadataViewModel?.title?.content ?? '';
+                    
+                    // Check if stream is live (contains "LIVE" in the structure indicates it's in the Live tab)
+                    const lockupStr = JSON.stringify(lockup);
+                    isLive = lockupStr.includes('LIVE');
+                } else {
+                    // Fallback for older videoRenderer structure
+                    const video = item?.richItemRenderer?.content?.videoRenderer;
+                    if (!video?.videoId) continue;
 
-                const title = video?.title?.runs?.[0]?.text ?? '';
+                    videoId = video.videoId;
+                    title = video?.title?.runs?.[0]?.text ?? '';
+                    
+                    // Old method: check thumbnail overlays for LIVE style
+                    const overlays = video?.thumbnailOverlays ?? [];
+                    isLive = overlays.some(o =>
+                        o?.thumbnailOverlayTimeStatusRenderer?.style === 'LIVE'
+                    );
+                }
+
+                if (!videoId || !isLive) continue;
+
                 const isExcluded = EXCLUDED_TITLES.some(t =>
                     title.toLowerCase().includes(t.toLowerCase())
                 );
                 if (isExcluded) continue;
 
                 streams.push({
-                    id: video.videoId,
+                    id: videoId,
                     title,
-                    url: `https://www.youtube.com/watch?v=${video.videoId}`,
+                    url: `https://www.youtube.com/watch?v=${videoId}`,
                     autoUpdated: true
                 });
             }

@@ -17,15 +17,29 @@ async function testChannel(handle) {
         const liveTab = tabs.find(t => t?.tabRenderer?.title === 'Live');
         const items = liveTab?.tabRenderer?.content?.richGridRenderer?.contents ?? [];
         
-        const liveStreams = items.filter(item => {
+        let liveCount = 0;
+        items.forEach(item => {
+            // Check for new lockupViewModel structure
+            const lockup = item?.richItemRenderer?.content?.lockupViewModel;
+            if (lockup) {
+                const lockupStr = JSON.stringify(lockup);
+                if (lockupStr.includes('LIVE')) {
+                    liveCount++;
+                }
+                return;
+            }
+            
+            // Fallback to old videoRenderer structure
             const video = item?.richItemRenderer?.content?.videoRenderer;
-            if (!video?.videoId) return false;
+            if (!video?.videoId) return;
             const overlays = video.thumbnailOverlays ?? [];
-            return overlays.some(o => o?.thumbnailOverlayTimeStatusRenderer?.style === 'LIVE');
+            if (overlays.some(o => o?.thumbnailOverlayTimeStatusRenderer?.style === 'LIVE')) {
+                liveCount++;
+            }
         });
         
-        console.log(`${handle}: ${liveStreams.length} live streams`);
-        return liveStreams.length;
+        console.log(`${handle}: ${liveCount} live streams`);
+        return liveCount;
     } catch (e) {
         console.error(`Error with ${handle}:`, e.message);
         return 0;
